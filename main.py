@@ -1,6 +1,8 @@
 from telebot import TeleBot
 import os
-import sys  # ➕ 외부 서버 경로 인식을 위해 추가
+import sys
+import http.server
+import threading
 from dotenv import load_dotenv
 
 # ➕ 봇이 실행되는 현재 폴더 위치를 파이썬 시스템 경로에 강제로 등록합니다.
@@ -78,10 +80,33 @@ def handle_incoming_message(message):
     bot.send_message(chat_id, response)
 
 
-def main():
-    print("🚀 킹크랩왕 AI 에이전트 허브가 가동되었습니다. 텔레그램 명령 대기 중...")
-    bot.infinity_polling()
+# ========================================================
+# 🛠️ [Render 포트 에러 해결용] 가짜 웹 서버 실행 영역
+# ========================================================
+def run_dummy_server():
+    # Render가 무료 웹 서비스에 요구하는 10000번 포트를 엽니다.
+    server_address = ('', 10000)
+    
+    # 단순 응답만 하는 최소한의 서버 핸들러
+    class DummyHandler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"Bot is Running Safely!")
+            
+        def log_message(self, format, *args):
+            return # 가짜 서버 로그가 너무 많이 찍히지 않도록 뮤트(Mute) 처리
+            
+    httpd = http.server.HTTPServer(server_address, DummyHandler)
+    print("✨ Render용 가짜 포트(10000) 활성화 완료!")
+    httpd.serve_forever()
 
-
+# 프로그램 시작점
 if __name__ == "__main__":
-    main()
+    # 1. 봇 감시와 별개로, 가짜 웹 서버를 백그라운드 스레드로 먼저 실행시킵니다.
+    threading.Thread(target=run_dummy_server, daemon=True).start()
+    
+    # 2. 메인 스레드에서는 원래 하던 대로 텔레그램 메시지를 감시합니다.
+    print("🤖 킹크랩왕 봇 무한 감시 시작...")
+    bot.infinity_polling()
