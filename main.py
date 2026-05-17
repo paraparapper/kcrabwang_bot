@@ -84,29 +84,32 @@ def handle_incoming_message(message):
 # 🛠️ [Render 포트 에러 해결용] 가짜 웹 서버 실행 영역
 # ========================================================
 def run_dummy_server():
-    # Render가 무료 웹 서비스에 요구하는 10000번 포트를 엽니다.
-    server_address = ('', 10000)
+    # 💡 핵심: Render가 할당하는 환경변수 'PORT'를 가져옵니다. 
+    # (명시적으로 '0.0.0.0'을 사용하여 모든 외부 접속을 안전하게 허용합니다)
+    port = int(os.environ.get("PORT", 10000))
+    server_address = ('0.0.0.0', port) 
     
-    # 단순 응답만 하는 최소한의 서버 핸들러
     class DummyHandler(http.server.BaseHTTPRequestHandler):
         def do_GET(self):
+            # UptimeRobot이 찔러볼 때 정상(200 OK) 응답을 줍니다.
             self.send_response(200)
             self.send_header("Content-type", "text/html")
             self.end_headers()
             self.wfile.write(b"Bot is Running Safely!")
             
         def log_message(self, format, *args):
-            return # 가짜 서버 로그가 너무 많이 찍히지 않도록 뮤트(Mute) 처리
+            # 무의미한 접속 로그가 Render 로그창을 도배하지 않도록 숨깁니다.
+            pass
             
     httpd = http.server.HTTPServer(server_address, DummyHandler)
-    print("✨ Render용 가짜 포트(10000) 활성화 완료!")
+    print(f"✨ Render용 자동 매칭 포트({port}) 활성화 완료!")
     httpd.serve_forever()
 
-# 프로그램 시작점
+# 3. 프로그램 시작점
 if __name__ == "__main__":
-    # 1. 봇 감시와 별개로, 가짜 웹 서버를 백그라운드 스레드로 먼저 실행시킵니다.
+    # 가짜 웹 서버를 백그라운드 스레드로 실행
     threading.Thread(target=run_dummy_server, daemon=True).start()
     
-    # 2. 메인 스레드에서는 원래 하던 대로 텔레그램 메시지를 감시합니다.
-    print("🤖 킹크랩왕 봇 무한 감시 시작...")
+    # 원래 하던 텔레그램 메시지 감시 시작
+    print("🤖 장부장 봇 무한 감시 시작...")
     bot.infinity_polling()
