@@ -96,6 +96,12 @@ def run_dummy_server():
             self.send_header("Content-type", "text/html")
             self.end_headers()
             self.wfile.write(b"Bot is Running Safely!")
+
+        def do_HEAD(self):
+            # UptimeRobot이 살짝 찔러만 볼 때(HEAD)도 정상이라고 대답해 주는 코드
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
             
         def log_message(self, format, *args):
             # 무의미한 접속 로그가 Render 로그창을 도배하지 않도록 숨깁니다.
