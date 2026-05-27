@@ -1,6 +1,8 @@
 from telebot import TeleBot
 import os
-import sys  # ➕ 외부 서버 경로 인식을 위해 추가
+import sys
+import http.server
+import threading
 from dotenv import load_dotenv
 
 # ➕ 봇이 실행되는 현재 폴더 위치를 파이썬 시스템 경로에 강제로 등록합니다.
@@ -30,6 +32,7 @@ HELP_TEXT = """
 ⚙️ *사용 가능한 주요 명령어:*
 • 🔄 *리셋/초기화*: 포장 페이지 초기화 \n(예: 리셋 1)
 • 📦 *준비/세팅*: 포장 페이지 준비 \n(예: 준비 1 ST 10)
+• 📏 *사이즈*: 포장 페이지 사이즈 세팅 \n(예: 사이즈 1 1.5 10)
 • 🦀 *재고*: 상품 재고 확인 (예: 재고 레드)
 • 💰 *잔액*: 거래처별 잔액 조회
 
@@ -50,7 +53,7 @@ def handle_incoming_message(message):
         print(f"🚨 미승인 사용자 접근 차단 (ID: {user_id})")
         bot.send_message(chat_id, "❌ 이 봇을 사용할 권한이 없습니다.")
         return
-    
+
     try:
         # 도움말 감지
         if user_msg in ["/start", "/help", "도움말", "help"]:
@@ -76,14 +79,46 @@ def handle_incoming_message(message):
     except Exception as e:
         print(f"🚨 에러 발생: {e}")
         response = "⚠️ 명령 처리 중 오류가 발생했습니다. 다시 시도해 주세요."
-        
+
     bot.send_message(chat_id, response)
 
 
-def main():
-    print("🚀 킹크랩왕 AI 에이전트 허브가 가동되었습니다. 텔레그램 명령 대기 중...")
-    bot.infinity_polling()
+# ========================================================
+# 🛠️ [Render 포트 에러 해결용] 가짜 웹 서버 실행 영역
+# ========================================================
+def run_dummy_server():
+    # 💡 핵심: Render가 할당하는 환경변수 'PORT'를 가져옵니다. 
+    # (명시적으로 '0.0.0.0'을 사용하여 모든 외부 접속을 안전하게 허용합니다)
+    port = int(os.environ.get("PORT", 10000))
+    server_address = ('0.0.0.0', port) 
 
+    class DummyHandler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            # UptimeRobot이 찔러볼 때 정상(200 OK) 응답을 줍니다.
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"Bot is Running Safely!")
 
+        def do_HEAD(self):
+            # UptimeRobot이 살짝 찔러만 볼 때(HEAD)도 정상이라고 대답해 주는 코드
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+
+        def log_message(self, format, *args):
+            # 무의미한 접속 로그가 Render 로그창을 도배하지 않도록 숨깁니다.
+            pass
+
+    httpd = http.server.HTTPServer(server_address, DummyHandler)
+    print(f"✨ Render용 자동 매칭 포트({port}) 활성화 완료!")
+    httpd.serve_forever()
+
+# 3. 프로그램 시작점
 if __name__ == "__main__":
-    main()
+    # 가짜 웹 서버를 백그라운드 스레드로 실행
+    threading.Thread(target=run_dummy_server, daemon=True).start()
+
+    # 원래 하던 텔레그램 메시지 감시 시작
+    print("🤖 킹크랩왕 AI 에이전트 허브가 가동되었습니다. 텔레그램 명령 대기 중...")
+    bot.infinity_polling()
