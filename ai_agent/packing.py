@@ -30,10 +30,11 @@ def clear_packing_agent(user_msg):
     valid_packing_names = [name for name in packing_names if name in PACKING_NAMES]
     if not valid_packing_names:
         return f"❓ 유효한 포장 이름이 없습니다. 다음 중 하나를 선택해주세요: {', '.join(PACKING_NAMES)}"
-    
+    print(valid_packing_names)
     try:
         response = requests.post(PACKING_WEBAPP_URL, json={"action": "clear", "targetList": valid_packing_names, "secretToken": SECRET_TOKEN})
         data = response.json()
+        print(data)
         status = data.get("status")
         if status == "clear success":
             return f"✅ {', '.join(valid_packing_names)} 스프레드시트를 성공적으로 초기화했습니다! 📊"
@@ -64,3 +65,27 @@ def set_packing_agent(user_msg):
     else:
         return "⚠️ 세팅에 실패했습니다. 나중에 다시 시도해주세요." 
     
+def set_size_agent(user_msg):
+    tokens = user_msg.split()
+    if len(tokens) < 4:
+        return "❓ 사이즈 명령 형식이 올바르지 않습니다. 예: '사이즈 1(포장페이지) 1.5(사이즈) 10(개수)'"
+    
+    packing_name = PACKING + tokens[1]
+    size_ranges = []
+    pack_counts = []
+
+    for i in range(2, min(len(tokens), 10), 2):
+        if i + 1 >= len(tokens):
+            break
+        size_ranges.append(tokens[i].strip().upper())
+        pack_counts.append(tokens[i + 1].strip())
+
+    print(f"사이즈: {size_ranges}, 개수: {pack_counts}")
+
+    response = requests.post(PACKING_WEBAPP_URL, json={"action": "set_size", "targetList": [packing_name], "secretToken": SECRET_TOKEN, "sizeRanges": size_ranges, "packCounts": pack_counts})
+    data = response.json()
+    status = data.get("status")
+    if status == "set_size success":
+        return f"✅ {packing_name}에 사이즈 '{size_ranges}'로 {pack_counts}개 세팅 완료! 📏"
+    else:
+        return "⚠️ 사이즈 세팅에 실패했습니다. 나중에 다시 시도해주세요."
