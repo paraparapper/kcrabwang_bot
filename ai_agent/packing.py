@@ -74,7 +74,7 @@ def set_size_agent(user_msg):
     size_ranges = []
     pack_counts = []
 
-    for i in range(2, min(len(tokens), 10), 2):
+    for i in range(2, min(len(tokens), 20), 2):
         if i + 1 >= len(tokens):
             break
         size_ranges.append(tokens[i].strip().upper())
