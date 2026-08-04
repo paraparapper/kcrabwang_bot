@@ -65,49 +65,79 @@ def get_seafood_market_price(year, month, day, crab_name):
     day: 일 (예: "04")
     crab_name: "왕게" 또는 "대게"
     """
+
+    browser = None
+
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                channel=None,
                 headless=True,
                 args=[
-                    "--no-sandbox", 
+                    "--no-sandbox",
                     "--disable-setuid-sandbox",
                     "--disable-dev-shm-usage",
-                    "--disable-gpu",
-                    "--single-process"
+                    "--disable-gpu"
                 ]
             )
+
             page = browser.new_page()
-            
+
             # 1. 페이지 접속
             page.goto(
                 "https://www.susansijang.co.kr/nsis/mim/info/mim9030",
                 wait_until="networkidle"
             )
 
+            # 페이지 로딩 확인
             page.wait_for_selector("select#searchYear")
-            
+
             # 2. 연, 월, 일 선택
-            page.select_option("select#searchYear", value=str(year))
-            page.select_option("select#searchMonth", value=str(month))
-            page.select_option("select#searchDate", value=str(day))
-            
-            # 3. 어종 선택 (왕게, 대게 등)
-            page.select_option("select#fishing_species", label=crab_name)
-            
+            page.select_option(
+                "select#searchYear",
+                value=str(year)
+            )
+
+            page.select_option(
+                "select#searchMonth",
+                value=str(month)
+            )
+
+            page.select_option(
+                "select#searchDate",
+                value=str(day)
+            )
+
+            # 3. 어종 선택
+            page.select_option(
+                "select#fishing_species",
+                label=crab_name
+            )
+
             # 4. 조회 버튼 클릭
             page.click("button#searchBtn")
-            
-            # 5. 결과 데이터 로딩 대기
+
+            # 5. 결과 로딩 대기
             page.wait_for_timeout(2000)
-            
-            # 6. 결과 테이블 데이터 긁어오기
-            rows = page.locator("table tr").all_inner_texts()        
-            
-            return parse_market_data(rows, crab_name)
-    except Exception as e:
+
+            # 6. 결과 테이블 읽기
+            rows = page.locator(
+                "table tr"
+            ).all_inner_texts()
+
+            result = parse_market_data(
+                rows,
+                crab_name
+            )
+
+            return result
+
+    except Exception:
         traceback.print_exc()
+        return "❌ 시세 조회 중 오류가 발생했습니다."
+
+    finally:
+        if browser:
+            browser.close()
 
 def parse_market_data(raw_rows, crab_name):
     parsed_list = []
