@@ -1,4 +1,9 @@
+import traceback
+import os
+
 from playwright.sync_api import sync_playwright
+
+print("PLAYWRIGHT_BROWSERS_PATH =", os.getenv("PLAYWRIGHT_BROWSERS_PATH"))
 
 def auction_agent(user_msg):
     """
@@ -59,39 +64,44 @@ def get_seafood_market_price(year, month, day, crab_name):
     day: 일 (예: "04")
     crab_name: "왕게" 또는 "대게"
     """
-    with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=True,
-            args=[
-                "--no-sandbox", 
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-gpu"
-            ]
-        )
-        page = browser.new_page()
-        
-        # 1. 페이지 접속
-        page.goto("https://www.susansijang.co.kr/nsis/mim/info/mim9030")
-        
-        # 2. 연, 월, 일 선택
-        page.select_option("select#searchYear", value=str(year))
-        page.select_option("select#searchMonth", value=str(month))
-        page.select_option("select#searchDate", value=str(day))
-        
-        # 3. 어종 선택 (왕게, 대게 등)
-        page.select_option("select#fishing_species", label=crab_name)
-        
-        # 4. 조회 버튼 클릭
-        page.click("button#searchBtn")
-        
-        # 5. 결과 데이터 로딩 대기
-        page.wait_for_timeout(2000)
-        
-        # 6. 결과 테이블 데이터 긁어오기
-        rows = page.locator("table tr").all_inner_texts()        
-        
-        return parse_market_data(rows, crab_name)
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                channel=None,
+                headless=True,
+                args=[
+                    "--no-sandbox", 
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--single-process"
+                ]
+            )
+            page = browser.new_page()
+            
+            # 1. 페이지 접속
+            page.goto("https://www.susansijang.co.kr/nsis/mim/info/mim9030")
+            
+            # 2. 연, 월, 일 선택
+            page.select_option("select#searchYear", value=str(year))
+            page.select_option("select#searchMonth", value=str(month))
+            page.select_option("select#searchDate", value=str(day))
+            
+            # 3. 어종 선택 (왕게, 대게 등)
+            page.select_option("select#fishing_species", label=crab_name)
+            
+            # 4. 조회 버튼 클릭
+            page.click("button#searchBtn")
+            
+            # 5. 결과 데이터 로딩 대기
+            page.wait_for_timeout(2000)
+            
+            # 6. 결과 테이블 데이터 긁어오기
+            rows = page.locator("table tr").all_inner_texts()        
+            
+            return parse_market_data(rows, crab_name)
+    except Exception as e:
+        traceback.print_exc()
 
 def parse_market_data(raw_rows, crab_name):
     parsed_list = []
