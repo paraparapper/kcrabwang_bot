@@ -107,13 +107,3 @@ def parse_market_data(raw_rows, crab_name):
         message = f"{crab_name} 시세 조회 결과가 없습니다."
     
     return message
-
-# --- 실행 예시 ---
-if __name__ == "__main__":
-    # 2026년 8월 4일 "왕게" 시세 조회
-    response = auction_agent("경매 왕게 8 3")
-    print(response)
-    # results = get_seafood_market_price("2026", "08", "04", "왕게")
-    # for data in results:
-    #     print(data)
-    
