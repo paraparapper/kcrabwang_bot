@@ -68,7 +68,7 @@ def get_seafood_market_price(year, month, day, crab_name):
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 channel=None,
-                headless=True,
+                headless=False,
                 args=[
                     "--no-sandbox", 
                     "--disable-setuid-sandbox",
