@@ -11,6 +11,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from ai_agent.balance import balance_agent
 from ai_agent.packing import clear_packing_agent, set_packing_agent, set_size_agent
 from ai_agent.stock import stock_agent
+from ai_agent.auction import auction_agent
 
 load_dotenv()  # 💡 .env 파일 환경 변수 로딩
 
@@ -35,6 +36,7 @@ HELP_TEXT = """
 • 📏 *사이즈*: 포장 페이지 사이즈 세팅 \n(예: 사이즈 1 1.5 10)
 • 🦀 *재고*: 상품 재고 확인 (예: 재고 레드)
 • 💰 *잔액*: 거래처별 잔액 조회
+• 📈 *경매*: 경매 정보 확인 \n(예: 경매 왕게 or 경매 왕게 월 일)
 
 💡 *팁:* '도움말'이나 'help'를 입력하시면 언제든 이 설명서를 다시 볼 수 있습니다.
 """
@@ -73,8 +75,10 @@ def handle_incoming_message(message):
             response = stock_agent(user_msg)
         elif "잔액" in user_msg:
             response = balance_agent(user_msg)
+        elif "경매" in user_msg:
+            response = auction_agent(user_msg)
         else:
-            response = "❓ 명령을 이해하지 못했습니다.\n'리셋', '초기화', '세팅', '준비', '재고', '잔액' 등의 키워드를 포함하시거나, 자세한 설명은 '도움말'이나 'help'를 입력해 주세요."
+            response = "❓ 명령을 이해하지 못했습니다.\n'리셋', '초기화', '세팅', '준비', '재고', '잔액', '경매' 등의 키워드를 포함하시거나, 자세한 설명은 '도움말'이나 'help'를 입력해 주세요."
 
     except Exception as e:
         print(f"🚨 에러 발생: {e}")
