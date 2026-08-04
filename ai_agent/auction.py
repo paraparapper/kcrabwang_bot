@@ -69,7 +69,7 @@ def get_seafood_market_price(year, month, day, crab_name):
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 channel=None,
-                headless=False,
+                headless=True,
                 args=[
                     "--no-sandbox", 
                     "--disable-setuid-sandbox",
@@ -81,7 +81,12 @@ def get_seafood_market_price(year, month, day, crab_name):
             page = browser.new_page()
             
             # 1. 페이지 접속
-            page.goto("https://www.susansijang.co.kr/nsis/mim/info/mim9030")
+            page.goto(
+                "https://www.susansijang.co.kr/nsis/mim/info/mim9030",
+                wait_until="networkidle"
+            )
+
+            page.wait_for_selector("select#searchYear")
             
             # 2. 연, 월, 일 선택
             page.select_option("select#searchYear", value=str(year))
