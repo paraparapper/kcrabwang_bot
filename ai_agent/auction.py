@@ -66,8 +66,6 @@ def get_seafood_market_price(year, month, day, crab_name):
     crab_name: "왕게" 또는 "대게"
     """
 
-    browser = None
-
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(
@@ -76,7 +74,8 @@ def get_seafood_market_price(year, month, day, crab_name):
                     "--no-sandbox",
                     "--disable-setuid-sandbox",
                     "--disable-dev-shm-usage",
-                    "--disable-gpu"
+                    "--disable-gpu",
+                    "--single-process"
                 ]
             )
 
@@ -84,8 +83,7 @@ def get_seafood_market_price(year, month, day, crab_name):
 
             # 1. 페이지 접속
             page.goto(
-                "https://www.susansijang.co.kr/nsis/mim/info/mim9030",
-                wait_until="domcontentloaded"
+                "https://www.susansijang.co.kr/nsis/mim/info/mim9030"
             )
 
             # 페이지 로딩 확인
@@ -116,28 +114,17 @@ def get_seafood_market_price(year, month, day, crab_name):
             # 4. 조회 버튼 클릭
             page.click("button#searchBtn")
 
-            # 5. 결과 로딩 대기
+            # 5. 결과 데이터 로딩 대기
             page.wait_for_timeout(2000)
 
-            # 6. 결과 테이블 읽기
-            rows = page.locator(
-                "table tr"
-            ).all_inner_texts()
+            # 6. 결과 테이블 데이터
+            rows = page.locator("table tr").all_inner_texts()
 
-            result = parse_market_data(
-                rows,
-                crab_name
-            )
-
-            return result
+            return parse_market_data(rows, crab_name)
 
     except Exception:
         traceback.print_exc()
         return "❌ 시세 조회 중 오류가 발생했습니다."
-
-    finally:
-        if browser:
-            browser.close()
 
 def parse_market_data(raw_rows, crab_name):
     parsed_list = []
@@ -161,13 +148,3 @@ def parse_market_data(raw_rows, crab_name):
         message = f"{crab_name} 시세 조회 결과가 없습니다."
     
     return message
-
-# --- 실행 예시 ---
-if __name__ == "__main__":
-    # 2026년 8월 4일 "왕게" 시세 조회
-    response = auction_agent("경매 왕게 8 3")
-    print(response)
-    # results = get_seafood_market_price("2026", "08", "04", "왕게")
-    # for data in results:
-    #     print(data)
-    
