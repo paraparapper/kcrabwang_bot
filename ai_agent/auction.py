@@ -85,7 +85,7 @@ def get_seafood_market_price(year, month, day, crab_name):
             # 1. 페이지 접속
             page.goto(
                 "https://www.susansijang.co.kr/nsis/mim/info/mim9030",
-                wait_until="networkidle"
+                wait_until="domcontentloaded"
             )
 
             # 페이지 로딩 확인
